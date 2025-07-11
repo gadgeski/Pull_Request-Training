@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pull Request体験アプリ</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: #0d1117;
+        color: #e6edf3;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #24292f 0%, #161b22 100%);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #58a6ff, #f85149);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .step {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .step::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #58a6ff, #f85149);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .step.active::before {
+        opacity: 1;
+      }
+
+      .step.completed {
+        background: rgba(46, 160, 67, 0.1);
+        border-color: #2ea043;
+      }
+
+      .step-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #30363d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+
+      .step.active .step-number {
+        background: #58a6ff;
+        color: #0d1117;
+      }
+
+      .step.completed .step-number {
+        background: #2ea043;
+        color: white;
+      }
+
+      .step h3 {
+        font-size: 1.4em;
+        color: #f0f6fc;
+      }
+
+      .file-editor {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        margin: 15px 0;
+        overflow: hidden;
+      }
+
+      .file-header {
+        background: #21262d;
+        padding: 12px 16px;
+        border-bottom: 1px solid #30363d;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .file-icon {
+        width: 16px;
+        height: 16px;
+        opacity: 0.7;
+      }
+
+      .file-name {
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 14px;
+        color: #f0f6fc;
+      }
+
+      .code-area {
+        padding: 16px;
+        background: #0d1117;
+      }
+
+      .code-input {
+        width: 100%;
+        min-height: 150px;
+        background: transparent;
+        border: none;
+        color: #e6edf3;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 14px;
+        line-height: 1.45;
+        resize: vertical;
+        outline: none;
+      }
+
+      .btn {
+        background: #238636;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn:hover {
+        background: #2ea043;
+        transform: translateY(-1px);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-secondary {
+        background: #21262d;
+        border: 1px solid #30363d;
+      }
+
+      .btn-secondary:hover {
+        background: #30363d;
+      }
+
+      .pr-form {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #f0f6fc;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        background: #21262d;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        color: #e6edf3;
+        font-size: 14px;
+      }
+
+      .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      .pr-preview {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .pr-title {
+        font-size: 1.5em;
+        font-weight: 600;
+        color: #f0f6fc;
+        margin-bottom: 10px;
+      }
+
+      .pr-meta {
+        color: #8b949e;
+        margin-bottom: 15px;
+      }
+
+      .pr-description {
+        color: #e6edf3;
+        line-height: 1.6;
+      }
+
+      .diff-view {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .diff-header {
+        background: #21262d;
+        padding: 12px 16px;
+        border-bottom: 1px solid #30363d;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 14px;
+      }
+
+      .diff-line {
+        padding: 2px 50px 2px 16px;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 12px;
+        position: relative;
+      }
+
+      .diff-line.added {
+        background: rgba(46, 160, 67, 0.15);
+        color: #e6edf3;
+      }
+
+      .diff-line.removed {
+        background: rgba(248, 81, 73, 0.15);
+        color: #e6edf3;
+      }
+
+      .diff-line.added::before {
+        content: "+";
+        position: absolute;
+        left: 16px;
+        color: #2ea043;
+      }
+
+      .diff-line.removed::before {
+        content: "-";
+        position: absolute;
+        left: 16px;
+        color: #f85149;
+      }
+
+      .success-message {
+        background: rgba(46, 160, 67, 0.1);
+        border: 1px solid #2ea043;
+        color: #2ea043;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        display: none;
+      }
+
+      .branch-selector {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 15px 0;
+      }
+
+      .branch-select {
+        background: #21262d;
+        border: 1px solid #30363d;
+        color: #e6edf3;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .arrow {
+        color: #8b949e;
+        font-size: 18px;
+      }
+
+      .commit-message {
+        background: #21262d;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 12px;
+        margin: 10px 0;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 14px;
+        color: #e6edf3;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 10px;
+      }
+
+      .status-draft {
+        background: rgba(139, 148, 158, 0.2);
+        color: #8b949e;
+      }
+
+      .status-open {
+        background: rgba(46, 160, 67, 0.2);
+        color: #2ea043;
+      }
+
+      .status-merged {
+        background: rgba(137, 87, 229, 0.2);
+        color: #8957e5;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .step {
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #30363d;
+        border-radius: 50%;
+        border-top-color: #58a6ff;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔄 Pull Request体験アプリ</h1>
+        <p>GitHubのPull Requestワークフローを体験できます</p>
+        <p><strong>Repository:</strong> gadgeski/sample-project</p>
+      </div>
+
+      <!-- Step 1: ブランチ作成 -->
+      <div class="step" id="step1">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <h3>フィーチャーブランチを作成</h3>
+        </div>
+        <p>新しい機能を開発するためのブランチを作成します。</p>
+
+        <div class="branch-selector">
+          <select class="branch-select" id="baseBranch">
+            <option value="main">main</option>
+          </select>
+          <span class="arrow">→</span>
+          <input
+            type="text"
+            class="branch-select"
+            id="newBranchName"
+            placeholder="feature/new-feature"
+            style="width: 200px"
+          />
+        </div>
+
+        <button class="btn" onclick="createBranch()">
+          <span>🌿</span>
+          ブランチを作成
+        </button>
+      </div>
+
+      <!-- Step 2: コード編集 -->
+      <div class="step" id="step2">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <h3>コードを編集</h3>
+        </div>
+        <p>作成したブランチで新しい機能を実装します。</p>
+
+        <div class="file-editor">
+          <div class="file-header">
+            <svg class="file-icon" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M4 1.75C4 .784 4.784 0 5.75 0h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-7.5A1.75 1.75 0 014 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25V6h-2.75A1.75 1.75 0 019 4.25V1.5H5.75z"
+              />
+            </svg>
+            <span class="file-name">index.js</span>
+          </div>
+          <div class="code-area">
+            <textarea
+              class="code-input"
+              id="codeEditor"
+              placeholder="// あなたのコードをここに書いてください
+function greetUser(name) {
+    return `Hello, ${name}!`;
+}
+
+console.log(greetUser('World'));"
+            ></textarea>
+          </div>
+        </div>
+
+        <button class="btn" onclick="saveChanges()">
+          <span>💾</span>
+          変更を保存
+        </button>
+      </div>
+
+      <!-- Step 3: コミット -->
+      <div class="step" id="step3">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <h3>変更をコミット</h3>
+        </div>
+        <p>変更内容をコミットメッセージと共に記録します。</p>
+
+        <div class="commit-message">
+          <input
+            type="text"
+            id="commitMessage"
+            placeholder="feat: add greeting function"
+            style="
+              width: 100%;
+              background: transparent;
+              border: none;
+              color: inherit;
+              outline: none;
+            "
+          />
+        </div>
+
+        <button class="btn" onclick="commitChanges()">
+          <span>📝</span>
+          コミット
+        </button>
+      </div>
+
+      <!-- Step 4: Pull Request作成 -->
+      <div class="step" id="step4">
+        <div class="step-header">
+          <div class="step-number">4</div>
+          <h3>Pull Requestを作成</h3>
+        </div>
+        <p>
+          変更内容をメインブランチにマージするためのPull Requestを作成します。
+        </p>
+
+        <div class="pr-form">
+          <div class="form-group">
+            <label for="prTitle">タイトル</label>
+            <input
+              type="text"
+              id="prTitle"
+              placeholder="Add greeting function"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="prDescription">説明</label>
+            <textarea
+              id="prDescription"
+              placeholder="## 概要
+この変更について説明してください...
+
+## 変更内容
+- 新しい機能を追加
+- バグを修正
+
+## テスト
+- [ ] テストを追加
+- [ ] 既存のテストが通る"
+            ></textarea>
+          </div>
+
+          <div class="branch-selector">
+            <select class="branch-select" id="prSourceBranch">
+              <option value="feature/new-feature">feature/new-feature</option>
+            </select>
+            <span class="arrow">→</span>
+            <select class="branch-select" id="prTargetBranch">
+              <option value="main">main</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn" onclick="createPullRequest()">
+          <span>🔄</span>
+          Pull Requestを作成
+        </button>
+      </div>
+
+      <!-- Step 5: Pull Request確認 -->
+      <div class="step" id="step5">
+        <div class="step-header">
+          <div class="step-number">5</div>
+          <h3>Pull Requestを確認</h3>
+        </div>
+        <p>作成されたPull Requestを確認し、必要に応じて修正します。</p>
+
+        <div class="pr-preview" id="prPreview" style="display: none">
+          <div class="pr-title" id="prTitlePreview">
+            Pull Request Title
+            <span class="status-badge status-open">Open</span>
+          </div>
+          <div class="pr-meta">
+            <strong>gadgeski</strong> wants to merge commits into
+            <strong>main</strong> from <strong>feature/new-feature</strong>
+          </div>
+          <div class="pr-description" id="prDescriptionPreview">
+            Pull Request Description
+          </div>
+
+          <div class="diff-view">
+            <div class="diff-header">📄 index.js</div>
+            <div class="diff-line added" id="diffContent">
+              + // 新しいコードがここに表示されます
+            </div>
+          </div>
+        </div>
+
+        <button
+          class="btn"
+          onclick="mergePullRequest()"
+          id="mergeBtn"
+          style="display: none"
+        >
+          <span>🔀</span>
+          Pull Requestをマージ
+        </button>
+      </div>
+
+      <!-- Step 6: 完了 -->
+      <div class="step" id="step6">
+        <div class="step-header">
+          <div class="step-number">6</div>
+          <h3>完了！</h3>
+        </div>
+        <div class="success-message" id="successMessage">
+          🎉 Pull Requestが正常にマージされました！<br />
+          あなたの変更がmainブランチに反映されました。
+        </div>
+
+        <button class="btn btn-secondary" onclick="resetApp()">
+          <span>🔄</span>
+          もう一度試す
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let currentStep = 1;
+      let branchName = "";
+      let codeContent = "";
+      let commitMsg = "";
+
+      function updateStepStatus() {
+        for (let i = 1; i <= 6; i++) {
+          const step = document.getElementById(`step${i}`);
+          if (i < currentStep) {
+            step.classList.add("completed");
+            step.classList.remove("active");
+          } else if (i === currentStep) {
+            step.classList.add("active");
+            step.classList.remove("completed");
+          } else {
+            step.classList.remove("active", "completed");
+          }
+        }
+      }
+
+      function createBranch() {
+        const branchInput = document.getElementById("newBranchName");
+        branchName = branchInput.value.trim();
+
+        if (!branchName) {
+          alert("ブランチ名を入力してください");
+          return;
+        }
+
+        // ブランチ名のバリデーション
+        if (!/^[a-zA-Z0-9-_/]+$/.test(branchName)) {
+          alert(
+            "ブランチ名には英数字、ハイフン、アンダースコア、スラッシュのみ使用できます"
+          );
+          return;
+        }
+
+        // アニメーション効果
+        const btn = event.target;
+        btn.innerHTML = '<span class="loading"></span> 作成中...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = "<span>✅</span> 作成完了";
+          currentStep = 2;
+          updateStepStatus();
+
+          // プルリクエストのソースブランチを更新
+          document.getElementById(
+            "prSourceBranch"
+          ).innerHTML = `<option value="${branchName}">${branchName}</option>`;
+        }, 1500);
+      }
+
+      function saveChanges() {
+        codeContent = document.getElementById("codeEditor").value;
+
+        if (!codeContent.trim()) {
+          alert("コードを入力してください");
+          return;
+        }
+
+        const btn = event.target;
+        btn.innerHTML = '<span class="loading"></span> 保存中...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = "<span>✅</span> 保存完了";
+          currentStep = 3;
+          updateStepStatus();
+        }, 1000);
+      }
+
+      function commitChanges() {
+        commitMsg = document.getElementById("commitMessage").value.trim();
+
+        if (!commitMsg) {
+          alert("コミットメッセージを入力してください");
+          return;
+        }
+
+        const btn = event.target;
+        btn.innerHTML = '<span class="loading"></span> コミット中...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = "<span>✅</span> コミット完了";
+          currentStep = 4;
+          updateStepStatus();
+
+          // PRフォームのデフォルト値を設定
+          if (!document.getElementById("prTitle").value) {
+            document.getElementById("prTitle").value = commitMsg;
+          }
+        }, 1500);
+      }
+
+      function createPullRequest() {
+        const title = document.getElementById("prTitle").value.trim();
+        const description = document
+          .getElementById("prDescription")
+          .value.trim();
+
+        if (!title) {
+          alert("Pull Requestのタイトルを入力してください");
+          return;
+        }
+
+        const btn = event.target;
+        btn.innerHTML = '<span class="loading"></span> 作成中...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = "<span>✅</span> 作成完了";
+          currentStep = 5;
+          updateStepStatus();
+
+          // プレビューを表示
+          document.getElementById("prPreview").style.display = "block";
+          document.getElementById(
+            "prTitlePreview"
+          ).innerHTML = `${title} <span class="status-badge status-open">Open</span>`;
+          document.getElementById("prDescriptionPreview").innerHTML =
+            description.replace(/\n/g, "<br>");
+
+          // 差分表示
+          const diffLines = codeContent
+            .split("\n")
+            .map((line) => `<div class="diff-line added">+ ${line}</div>`)
+            .join("");
+          document.getElementById("diffContent").innerHTML = diffLines;
+
+          document.getElementById("mergeBtn").style.display = "inline-flex";
+        }, 2000);
+      }
+
+      function mergePullRequest() {
+        const btn = event.target;
+        btn.innerHTML = '<span class="loading"></span> マージ中...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.innerHTML = "<span>✅</span> マージ完了";
+          currentStep = 6;
+          updateStepStatus();
+
+          // 成功メッセージを表示
+          document.getElementById("successMessage").style.display = "block";
+
+          // PRステータスを更新
+          const statusBadge = document.querySelector(".status-badge");
+          statusBadge.textContent = "Merged";
+          statusBadge.className = "status-badge status-merged";
+        }, 2000);
+      }
+
+      function resetApp() {
+        currentStep = 1;
+        branchName = "";
+        codeContent = "";
+        commitMsg = "";
+
+        // フォームリセット
+        document.getElementById("newBranchName").value = "";
+        document.getElementById("codeEditor").value = "";
+        document.getElementById("commitMessage").value = "";
+        document.getElementById("prTitle").value = "";
+        document.getElementById("prDescription").value = "";
+
+        // プレビューを隠す
+        document.getElementById("prPreview").style.display = "none";
+        document.getElementById("mergeBtn").style.display = "none";
+        document.getElementById("successMessage").style.display = "none";
+
+        // ボタンリセット
+        document.querySelectorAll(".btn").forEach((btn) => {
+          btn.disabled = false;
+          btn.innerHTML = btn.innerHTML.replace(/.*<span>/, "<span>");
+        });
+
+        updateStepStatus();
+      }
+
+      // 初期化
+      updateStepStatus();
+    </script>
+  </body>
+</html>
